@@ -69,7 +69,8 @@ function perci_api_autopublish($data) {
     $author = get_user_by('login', $_POST['author_login']);
     $postarr['post_author'] = $author->ID;
 
-    $postarr['post_date'] = date('Y-m-d H:i:s', $_POST['post_date']);
+    //$postarr['post_date'] = date('Y-m-d H:i:s', $_POST['post_date']);
+    $postarr['post_date'] = $_POST['post_date'];
 
     $postarr['post_content'] = $_POST['post_content'];
 
@@ -79,8 +80,15 @@ function perci_api_autopublish($data) {
     $postarr['post_category'] = [$ca->term_id];
 
     try {
+        // 插入文章
         $postid = wp_insert_post($postarr);
+
+        // 发布文章
         wp_publish_post($postid);
+
+        if (!empty($_POST['post_thumbnail'])) {
+            update_post_meta($postid, 'perci_autopublish_thumbnail', $_POST['post_thumbnail']);
+        }
     } catch (\Exception $e) {
         $response['msg'] = $e->getMessage();
         return $response;
