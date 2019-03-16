@@ -19,11 +19,11 @@ function perci_autopublish_admin_page() {
 
     $ak = get_option('perci_autopublish_ak');
     $sk = get_option('perci_autopublish_sk');
-    if ($ak == "" && $sk == "") {
+    if ($ak == "" || $sk == "") {
         $ak = '111111';
         $sk = '111111';
         update_option('perci_autopublish_ak', $ak);
-        update_option('perci_autopublish_ak', $sk);
+        update_option('perci_autopublish_sk', $sk);
     }
     echo "
         <div>
@@ -75,9 +75,13 @@ function perci_api_autopublish($data) {
     $postarr['post_content'] = $_POST['post_content'];
 
     $postarr['post_title'] = $_POST['post_title'];
+	
+	// 文章别名，用于url。必须含有，否则文章无链接
+	$postarr['post_name']  = $postarr['post_title'];	
 
     $ca = get_category_by_slug($_POST['category_slug']);
     $postarr['post_category'] = [$ca->term_id];
+
 
     try {
         // 插入文章
@@ -87,7 +91,30 @@ function perci_api_autopublish($data) {
         wp_publish_post($postid);
 
         if (!empty($_POST['post_thumbnail'])) {
-            update_post_meta($postid, 'perci_autopublish_thumbnail', $_POST['post_thumbnail']);
+			require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+    		require_once(ABSPATH . "wp-admin" . '/includes/file.php');
+    		require_once(ABSPATH . "wp-admin" . '/includes/media.php');
+			$tmp = download_url($_POST['post_thumbnail']);
+			$file_array = array(
+				'name' 			=> basename($_POST['post_thumbnail']),
+				'tmp_name'		=> $tmp,
+			);
+
+			if ( is_wp_error( $tmp )) {
+				$response['m2'] = $_POST['post_thumbnail'];
+				$response['m'] = $tmp;
+				$response['msg'] = 'download_error';
+				return $response;
+			}
+
+			$attachment_id = media_handle_sideload( $file_array, $postid);
+
+			if ( is_wp_error( $attachment_id ) ) {
+				@unlink( $file_array['tmp_name']);
+				$response['msg'] = 'upload_error';
+				return $response;
+			}			
+			update_post_meta($postid, '_thumbnail_id', $attachment_id);
         }
     } catch (\Exception $e) {
         $response['msg'] = $e->getMessage();
@@ -98,5 +125,6 @@ function perci_api_autopublish($data) {
     $response['msg'] = 'OK';
     return $response;
 }
+
 
 ?>
