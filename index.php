@@ -4,6 +4,7 @@
  * Description: 自动发布文章的api
  * Author: Junhao
  * Version: 1.0
+ * Author URI: https://github.com/shudal/perci-auto-publish
  */
 
 add_action('admin_menu', 'perci_autopublish_admin');
@@ -11,6 +12,8 @@ function perci_autopublish_admin() {
     add_options_page("自动发布", "自动发布", "manage_options", "perci-auto-publish", "perci_autopublish_admin_page");
 }
 function perci_autopublish_admin_page() {
+    echo "<div>使用文档参见<a href='https://github.com/shudal/perci-auto-publish'>这里</a></div>";
+
     if (!empty($_POST['perci_autopublish_ak'])) {
         update_option('perci_autopublish_ak', $_POST['perci_autopublish_ak']);
         update_option('perci_autopublish_sk', $_POST['perci_autopublish_sk']);
