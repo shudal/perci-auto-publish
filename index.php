@@ -85,10 +85,25 @@ function perci_api_autopublish($data) {
     $ca = get_category_by_slug($_POST['category_slug']);
     $postarr['post_category'] = [$ca->term_id];
 
+	try {
+		$postarr['tags_input'] = explode("|", $_POST['tags']);
+		$response['data']['tags_code'] = "OK";
+		$response['data']['tags_msg'] = $postarr['tags_input'];
+	} catch (\Exception $e) {
+		$response['data']['tags_code'] = "-1";
+		$response['data']['tags_msg'] = $e->getMessage();
+		if (isset($postarr)) {
+			unset($postarr);
+		}
+	}
 
     try {
         // 插入文章
+		remove_filter('content_save_pre', 'wp_filter_post_kses');
+		remove_filter('content_filtered_save_pre', 'wp_filter_post_kses');
         $postid = wp_insert_post($postarr);
+		add_filter('content_save_pre', 'wp_filter_post_kses');
+		add_filter('content_filtered_save_pre', 'wp_filter_post_kses');
 
         // 发布文章
         wp_publish_post($postid);
